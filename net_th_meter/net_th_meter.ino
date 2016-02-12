@@ -24,7 +24,8 @@
 
 #define DHT_TYPE      DHT22 // DHT 22
 #define ONE_WIRE_CNT  3     // count of 1-wire connections
-#define TCP_PORT      502   // Modbus TCP
+#define TCP_PORT      1000//502   // Modbus TCP default port
+#define RESPONSE_LEN  7     // length of Modbus TCP response
 
 // DHT instance
 DHT dht(DHT_PIN, DHT_TYPE);
@@ -40,6 +41,9 @@ DallasTemperature dsSensors[ONE_WIRE_CNT];
 byte mac[] = { 0xAB, 0xB6, 0xAA, 0x43, 0xA5, 0x9D };
 IPAddress ip(192, 168, 1, 8);
 EthernetServer server = EthernetServer(TCP_PORT);
+EthernetClient client;
+boolean clientConnected = false;
+byte response[RESPONSE_LEN] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
 
 // Speed control
 unsigned long time;
@@ -116,26 +120,65 @@ void readDS() {
     Serial.print("] = ");
     Serial.print(t);
     Serial.println(" *C");
-  }
+  }  
   writeTime();
   Serial.println();
 }
 
 // Process Ethernet communication
 void communicate() {
-  size_t size;
+  writeTime();
 
-  if (EthernetClient client = server.available()) {
-    while((size = client.available()) > 0) {
-      uint8_t* msg = (uint8_t*)malloc(size);
-      size = client.read(msg, size);
-      Serial.write(msg, size);
-      free(msg);
+  // manage connection
+  if (clientConnected) {
+    if (client.connected()) {
+      Serial.println("Client is still connected");
+    } else {
+      client.stop();
+      clientConnected = false;
+      Serial.println("Client has been disconnected");
     }
-
-    client.println("DATA from Server!");
-    client.stop();
   }
+
+  if (!clientConnected) {
+    client = server.available();
+    if (client) {
+      client.flush();
+      clientConnected = true;
+      Serial.println("New client is connected");
+    } else {
+      Serial.println("Client is not connected");
+    }
+  }
+
+  // communicating
+  if (clientConnected) {
+    // wait for the request 00 00 00 00 00 06 01 03 00 00 00 0A
+    Serial.print("Receiving data: ");
+    boolean sendResponse = false;
+    while (client.available() > 0) {
+      char c = client.read();
+      Serial.print(c, HEX);
+      Serial.print(" ");
+  
+      if (c == 0x0A) {
+        sendResponse = true;
+        break;
+      }
+    }
+    Serial.println();
+  
+    // send response
+    if (sendResponse) {
+      Serial.println("Sending response");
+      client.write(response, RESPONSE_LEN);
+    } else {
+      Serial.println("Response not required");
+    }
+  }
+
+  writeTime();
+  Serial.println();
 }
 
 void setup() {
@@ -150,8 +193,8 @@ void setup() {
 void loop() {
   time = millis();
   
-  // wait a few seconds between measurements
-  delay(2000);
+  // wait between measurements
+  delay(500);
 
   // read temperature and humidity from DHT sensors, takes around 270 milliseconds
   readDHT();
