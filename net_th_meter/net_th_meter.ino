@@ -24,8 +24,8 @@
 
 #define DHT_TYPE      DHT22 // DHT 22
 #define ONE_WIRE_CNT  3     // count of 1-wire connections
-#define TCP_PORT      1000//502   // Modbus TCP default port
-#define RESPONSE_LEN  7     // length of Modbus TCP response
+#define TCP_PORT      502   // Modbus TCP default port
+#define RESPONSE_LEN  29    // length of Modbus TCP response
 
 // DHT instance
 DHT dht(DHT_PIN, DHT_TYPE);
@@ -43,7 +43,11 @@ IPAddress ip(192, 168, 1, 8);
 EthernetServer server = EthernetServer(TCP_PORT);
 EthernetClient client;
 boolean clientConnected = false;
-byte response[RESPONSE_LEN] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+byte response[RESPONSE_LEN] = 
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0x00, 0x03, 0x14, // bytes 0-9 - according to Modbus TCP specification
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,       // bytes 10-17 - holding registers 1-2, 3-4: dht_t, dht_h
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,       // bytes 18-25 - holding registers 5-6, 7-8: ds_t0, ds_t1
+    0x00, 0x00, 0x00, 0x00 };                             // bytes 26-29 - holding registers 9-10: ds_t2
 
 // Speed control
 unsigned long time;
@@ -141,9 +145,9 @@ void communicate() {
   }
 
   if (!clientConnected) {
+    // connection is considered to be established only when data are received
     client = server.available();
     if (client) {
-      client.flush();
       clientConnected = true;
       Serial.println("New client is connected");
     } else {
