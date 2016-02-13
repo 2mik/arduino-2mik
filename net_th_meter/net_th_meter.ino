@@ -6,7 +6,9 @@
  * DHT22   - 1 unit,
  * DS18B20 - 3 units,
  * ENC28J60 based Ethernet controller.
- * Communicates using Modbus TCP.
+ * 
+ * Communicates using Modbus TCP:
+ * Holding Registers (4x) 40001 - 40010
  * 
  * (c) 2016, Mikhail Shiryaev
  */
@@ -22,13 +24,30 @@
 #define ONE_WIRE_PIN1 6 // the 2nd DS18B20 data
 #define ONE_WIRE_PIN2 7 // the 3rd DS18B20 data
 
-#define DHT_TYPE      DHT22 // DHT 22
-#define ONE_WIRE_CNT  3     // count of 1-wire connections
-#define TCP_PORT      502   // Modbus TCP default port
-#define RESPONSE_LEN  29    // length of Modbus TCP response
+#define DHT_TYPE        DHT22  // DHT 22
+#define ONE_WIRE_CNT    3      // count of 1-wire connections
+#define TCP_PORT        502    // Modbus TCP default port
+#define EMPTY_VAL       -100.0 // empty float value of measurement
+#define MODBUS_HDR_LEN  9      // length of Modbus TCP header
+
+//#define DEBUG
+
+#ifdef DEBUG
+ #define DEBUG_PRINT(val)       Serial.print(val)
+ #define DEBUG_PRINTHEX(val)    Serial.print(val, HEX)
+ #define DEBUG_PRINTLN(val)     Serial.println(val)
+ #define DEBUG_WRITETIME()      writeTime()
+#else
+ #define DEBUG_PRINT(val)
+ #define DEBUG_PRINTHEX(val)
+ #define DEBUG_PRINTLN(val) 
+ #define DEBUG_WRITETIME()
+#endif
 
 // DHT instance
 DHT dht(DHT_PIN, DHT_TYPE);
+float dhtH = EMPTY_VAL;
+float dhtT = EMPTY_VAL;
 
 // 1-wire and DS instances
 OneWire oneWire0(ONE_WIRE_PIN0);
@@ -36,26 +55,32 @@ OneWire oneWire1(ONE_WIRE_PIN1);
 OneWire oneWire2(ONE_WIRE_PIN2);
 OneWire oneWires[] = {oneWire0, oneWire1, oneWire2};
 DallasTemperature dsSensors[ONE_WIRE_CNT];
+float dsT[ONE_WIRE_CNT] = { EMPTY_VAL, EMPTY_VAL, EMPTY_VAL };
 
 // Ethernet
-byte mac[] = { 0xAB, 0xB6, 0xAA, 0x43, 0xA5, 0x9D };
+const byte mac[] = { 0xAB, 0xB6, 0xAA, 0x43, 0xA5, 0x9D };
 IPAddress ip(192, 168, 1, 8);
 EthernetServer server = EthernetServer(TCP_PORT);
 EthernetClient client;
 boolean clientConnected = false;
-byte response[RESPONSE_LEN] = 
-  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0x00, 0x03, 0x14, // bytes 0-9 - according to Modbus TCP specification
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,       // bytes 10-17 - holding registers 1-2, 3-4: dht_t, dht_h
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,       // bytes 18-25 - holding registers 5-6, 7-8: ds_t0, ds_t1
-    0x00, 0x00, 0x00, 0x00 };                             // bytes 26-29 - holding registers 9-10: ds_t2
+const byte modbusHeader[MODBUS_HDR_LEN] = { 
+  0x00, 0x00, // Transaction identifier
+  0x00, 0x00, // Protocol identifier
+  0x00, 0x17, // Length
+  0x00,       // Unit identifier
+  0x03,       // Function code
+  0x14        // Byte count (20)
+};
 
 // Speed control
+#ifdef DEBUG
 unsigned long time;
+#endif
 
 // Initialize DHT sensor
 void initDHT() {
   dht.begin();
-  Serial.println("DHT sensor initialized");
+  DEBUG_PRINTLN("DHT sensor initialized");
 }
 
 // Initialize DS sensors
@@ -67,7 +92,7 @@ void initDS() {
     if (dsSensors[i].getAddress(deviceAddress, 0)) 
       dsSensors[i].setResolution(deviceAddress, 12);
   }
-  Serial.println("DS sensors initialized");
+  DEBUG_PRINTLN("DS sensors initialized");
 }
 
 // Initialize ENC28J60 Ethernet controller
@@ -75,72 +100,74 @@ void initEthernet() {
   Ethernet.begin(mac, ip);
   server.begin();
 
-  Serial.print("Ethernet initialized. IP: ");
-  Serial.println(Ethernet.localIP());
+  DEBUG_PRINT("Ethernet initialized. IP: ");
+  Serial.print(Ethernet.localIP());
+  Serial.print(":");
+  Serial.println(TCP_PORT);  
 }
 
+#ifdef DEBUG
 void writeTime() {
   Serial.print("Time elapsed = ");
   Serial.println(millis() - time);
 }
+#endif
 
 // Read data from DHT sensor
 void readDHT() {
-  writeTime();
-  Serial.println("Reading from DHT sensor");
-  float h = dht.readHumidity();
-  float t = dht.readTemperature(); // *C
-  Serial.println("Done");
-  writeTime();
+  DEBUG_WRITETIME();
+  DEBUG_PRINTLN("Reading from DHT sensor");
+  
+  dhtH = dht.readHumidity();
+  dhtT = dht.readTemperature(); // *C
+  
+  DEBUG_WRITETIME();
 
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Error reading from DHT sensor");
+  if (isnan(dhtH) || isnan(dhtT)) {
+    dhtH = EMPTY_VAL;
+    dhtT = EMPTY_VAL;
+    DEBUG_PRINTLN("Error reading from DHT sensor");
   } else {
-    Serial.print("h = ");
-    Serial.print(h);
-    Serial.println(" %");
-    Serial.print("t = ");
-    Serial.print(t);
-    Serial.println(" *C");
+    DEBUG_PRINT("h = ");
+    DEBUG_PRINTLN(dhtH);
+    DEBUG_PRINT("t = ");
+    DEBUG_PRINTLN(dhtT);
   }
-  writeTime();
-  Serial.println();
+  
+  DEBUG_WRITETIME();
+  DEBUG_PRINTLN();
 }
 
-// Read data from DS sensors
-void readDS() {
-  writeTime();
-  Serial.println("Requesting DS sensors");
-  for (int i = 0; i < ONE_WIRE_CNT; i++) {
-    dsSensors[i].requestTemperatures();
-  }
-  Serial.println("Done");
-  writeTime();
+// Read data from DS sensor
+void readDS(int index) {
+  DEBUG_WRITETIME();
+  DEBUG_PRINT("Requesting DS sensor ");
+  DEBUG_PRINTLN(index);
+
+  dsSensors[index].requestTemperatures();
   
-  for (int i=0; i < ONE_WIRE_CNT; i++) {
-    float t = dsSensors[i].getTempCByIndex(0);
-    Serial.print("t[");
-    Serial.print(i);
-    Serial.print("] = ");
-    Serial.print(t);
-    Serial.println(" *C");
-  }  
-  writeTime();
-  Serial.println();
+  DEBUG_WRITETIME();
+  
+  dsT[index] = dsSensors[index].getTempCByIndex(0);
+
+  DEBUG_PRINT("t = ");
+  DEBUG_PRINTLN(dsT[index]);
+  DEBUG_WRITETIME();
+  DEBUG_PRINTLN();
 }
 
 // Process Ethernet communication
 void communicate() {
-  writeTime();
+  DEBUG_WRITETIME();
 
   // manage connection
   if (clientConnected) {
     if (client.connected()) {
-      Serial.println("Client is still connected");
+      DEBUG_PRINTLN("Client is still connected");
     } else {
       client.stop();
       clientConnected = false;
-      Serial.println("Client has been disconnected");
+      DEBUG_PRINTLN("Client has been disconnected");
     }
   }
 
@@ -149,24 +176,25 @@ void communicate() {
     client = server.available();
     if (client) {
       clientConnected = true;
-      Serial.println("New client is connected");
+      DEBUG_PRINTLN("New client is connected");
     } else {
-      Serial.println("Client is not connected");
+      DEBUG_PRINTLN("Client is not connected");
     }
   }
 
   // communicating
   if (clientConnected) {
     // wait for the request 00 00 00 00 00 06 01 03 00 00 00 0A
-    Serial.print("Receiving data: ");
+    DEBUG_PRINT("Receiving data: ");
     boolean sendResponse = false;
     while (client.available() > 0) {
       char c = client.read();
-      Serial.print(c, HEX);
-      Serial.print(" ");
+      DEBUG_PRINTHEX(c);
+      DEBUG_PRINT(" ");
   
       if (c == 0x0A) {
         sendResponse = true;
+        client.flush(); // clear input buffer
         break;
       }
     }
@@ -174,15 +202,18 @@ void communicate() {
   
     // send response
     if (sendResponse) {
-      Serial.println("Sending response");
-      client.write(response, RESPONSE_LEN);
+      DEBUG_PRINTLN("Sending response");
+      client.write(modbusHeader, MODBUS_HDR_LEN);
+      client.write((byte*)&dhtH, 4);
+      client.write((byte*)&dhtT, 4);
+      client.write((byte*)&dsT, 12);
     } else {
-      Serial.println("Response not required");
+      DEBUG_PRINTLN("Response not required");
     }
   }
 
-  writeTime();
-  Serial.println();
+  DEBUG_WRITETIME();
+  DEBUG_PRINTLN();
 }
 
 void setup() {
@@ -191,21 +222,21 @@ void setup() {
   initDHT();
   initDS();
   initEthernet();
-  Serial.println();
+  DEBUG_PRINTLN();
 }
 
 void loop() {
-  time = millis();
-  
-  // wait between measurements
+#ifdef DEBUG
+  time = millis();  
   delay(500);
+#endif
 
-  // read temperature and humidity from DHT sensors, takes around 270 milliseconds
-  readDHT();
-  
-  // read temperatures from DS sensors, takes around 2370 milliseconds
-  readDS();
-
-  // Ethernet communication
+  readDHT(); // around 270 ms
+  communicate();
+  readDS(0); // around 800 ms
+  communicate();
+  readDS(1); // around 800 ms
+  communicate();
+  readDS(2); // around 800 ms
   communicate();
 }
