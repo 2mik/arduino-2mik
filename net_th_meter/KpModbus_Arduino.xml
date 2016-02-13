@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<DevTemplate>
+  <ElemGroups>
+    <ElemGroup name="Group 1" tableType="HoldingRegisters" address="0">
+      <Elem name="Humidity (DHT22)" type="float" byteOrder="3210" />
+      <Elem name="Temperature (DHT22)" type="float" byteOrder="3210" />
+      <Elem name="Temerature 0 (DS18B20)" type="float" byteOrder="3210" />
+      <Elem name="Temerature 1 (DS18B20)" type="float" byteOrder="3210" />
+      <Elem name="Temerature 2 (DS18B20)" type="float" byteOrder="3210" />
+    </ElemGroup>
+  </ElemGroups>
+  <Cmds />
+</DevTemplate>
