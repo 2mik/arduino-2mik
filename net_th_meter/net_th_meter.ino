@@ -29,8 +29,10 @@
 #define TCP_PORT        502    // Modbus TCP default port
 #define EMPTY_VAL       -100.0 // empty float value of measurement
 #define MODBUS_HDR_LEN  9      // length of Modbus TCP header
+#define DISCONN_TIME    10000  // inactive time before client disconnect, ms
+#define REINIT_TIME     20000  // inactive time before reinit Ethernet, ms
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
  #define DEBUG_PRINT(val)       Serial.print(val)
@@ -63,6 +65,7 @@ IPAddress ip(192, 168, 1, 8);
 EthernetServer server = EthernetServer(TCP_PORT);
 EthernetClient client;
 boolean clientConnected = false;
+unsigned long commTime;
 const byte modbusHeader[MODBUS_HDR_LEN] = { 
   0x00, 0x00, // Transaction identifier
   0x00, 0x00, // Protocol identifier
@@ -97,6 +100,7 @@ void initDS() {
 
 // Initialize ENC28J60 Ethernet controller
 void initEthernet() {
+  commTime = millis();  
   Ethernet.begin(mac, ip);
   server.begin();
 
@@ -161,8 +165,14 @@ void communicate() {
   DEBUG_WRITETIME();
 
   // manage connection
+  unsigned long inactiveSpan = millis() - commTime;
+  
   if (clientConnected) {
-    if (client.connected()) {
+    if (inactiveSpan > DISCONN_TIME) {
+        DEBUG_PRINTLN("Disconnecting inactive client");
+        client.stop();
+        clientConnected = false;
+    } else if (client.connected()) {
       DEBUG_PRINTLN("Client is still connected");
     } else {
       client.stop();
@@ -172,6 +182,11 @@ void communicate() {
   }
 
   if (!clientConnected) {
+    // reinit Ethernet if client can't connect
+    if (inactiveSpan > REINIT_TIME) {
+      initEthernet();
+    }
+    
     // connection is considered to be established only when data are received
     client = server.available();
     if (client) {
@@ -188,17 +203,18 @@ void communicate() {
     DEBUG_PRINT("Receiving data: ");
     boolean sendResponse = false;
     while (client.available() > 0) {
+      DEBUG_PRINT("_");
       char c = client.read();
       DEBUG_PRINTHEX(c);
-      DEBUG_PRINT(" ");
   
       if (c == 0x0A) {
         sendResponse = true;
+        commTime = millis();  
         client.flush(); // clear input buffer
         break;
       }
     }
-    Serial.println();
+    DEBUG_PRINTLN();
   
     // send response
     if (sendResponse) {
@@ -211,7 +227,7 @@ void communicate() {
       DEBUG_PRINTLN("Response not required");
     }
   }
-
+  
   DEBUG_WRITETIME();
   DEBUG_PRINTLN();
 }
