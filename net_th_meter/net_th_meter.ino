@@ -23,6 +23,7 @@
 #define ONE_WIRE_PIN0 5 // the 1st DS18B20 data
 #define ONE_WIRE_PIN1 6 // the 2nd DS18B20 data
 #define ONE_WIRE_PIN2 7 // the 3rd DS18B20 data
+#define RESET_ETH     9 // reset ENC28J60 Ethernet
 
 #define DHT_TYPE        DHT22  // DHT 22
 #define ONE_WIRE_CNT    3      // count of 1-wire connections
@@ -32,7 +33,7 @@
 #define DISCONN_TIME    10000  // inactive time before client disconnect, ms
 #define REINIT_TIME     20000  // inactive time before reinit Ethernet, ms
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
  #define DEBUG_PRINT(val)       Serial.print(val)
@@ -100,6 +101,14 @@ void initDS() {
 
 // Initialize ENC28J60 Ethernet controller
 void initEthernet() {
+  // reset Ethernet controller
+  DEBUG_PRINT("Reset Ethernet controller");
+  pinMode(RESET_ETH, OUTPUT);
+  digitalWrite(RESET_ETH, LOW);
+  delay(500);
+  digitalWrite(RESET_ETH, HIGH);
+
+  // start TCP server
   commTime = millis();  
   Ethernet.begin(mac, ip);
   server.begin();
