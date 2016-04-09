@@ -13,6 +13,7 @@
  * (c) 2016, Mikhail Shiryaev
  */
 
+#include <avr/wdt.h>           // Watchdog timer support
 #include <DHT.h>               // https://github.com/adafruit/DHT-sensor-library
 #include <OneWire.h>           // http://www.pjrc.com/teensy/td_libs_OneWire.html
 #include <DallasTemperature.h> // https://github.com/milesburton/Arduino-Temperature-Control-Library
@@ -33,7 +34,8 @@
 #define DISCONN_TIME    10000  // inactive time before client disconnect, ms
 #define REINIT_TIME     20000  // inactive time before reinit Ethernet, ms
 
-//#define DEBUG
+#define USE_WATCHDOG           // use Watchdog timer. If true, burn MCU without the bootloader
+//#define DEBUG                // write detailed log to Serial port
 
 #ifdef DEBUG
  #define DEBUG_PRINT(val)       Serial.print(val)
@@ -80,6 +82,12 @@ const byte modbusHeader[MODBUS_HDR_LEN] = {
 #ifdef DEBUG
 unsigned long time;
 #endif
+
+// Init Watchdog timer
+void initWDT() {
+  wdt_disable();
+  wdt_enable(WDTO_4S);
+}
 
 // Initialize DHT sensor
 void initDHT() {
@@ -190,12 +198,7 @@ void communicate() {
     }
   }
 
-  if (!clientConnected) {
-    // reinit Ethernet if client can't connect
-    if (inactiveSpan > REINIT_TIME) {
-      initEthernet();
-    }
-    
+  if (!clientConnected) {    
     // connection is considered to be established only when data are received
     client = server.available();
     if (client) {
@@ -219,6 +222,7 @@ void communicate() {
       if (c == 0x0A) {
         sendResponse = true;
         commTime = millis();  
+        inactiveSpan = 0;
         client.flush(); // clear input buffer
         break;
       }
@@ -237,11 +241,27 @@ void communicate() {
     }
   }
   
+#ifdef USE_WATCHDOG
+  // reset Watchdog timer if client is active
+  if (inactiveSpan <= REINIT_TIME) {
+    wdt_reset();
+  }
+#else
+  // reinit Ethernet if client can't connect
+  if (inactiveSpan > REINIT_TIME) {
+    initEthernet();
+  }
+#endif
+  
   DEBUG_WRITETIME();
   DEBUG_PRINTLN();
 }
 
 void setup() {
+#ifdef USE_WATCHDOG
+  initWDT();
+#endif
+
   Serial.begin(9600);
   Serial.println("NET TH meter started");
   initDHT();
