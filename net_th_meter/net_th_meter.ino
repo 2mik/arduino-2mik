@@ -63,7 +63,7 @@ DallasTemperature dsSensors[ONE_WIRE_CNT];
 float dsT[ONE_WIRE_CNT] = { EMPTY_VAL, EMPTY_VAL, EMPTY_VAL };
 
 // Ethernet
-const byte mac[] = { 0xAB, 0xB6, 0xAA, 0x43, 0xA5, 0x9D };
+const byte mac[] = { 0x0B, 0xB6, 0xAA, 0x43, 0xA5, 0x9D };
 IPAddress ip(192, 168, 1, 8);
 EthernetServer server = EthernetServer(TCP_PORT);
 EthernetClient client;
