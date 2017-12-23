@@ -22,7 +22,7 @@
 #define ONE_WIRE_PIN1 6 // the 2nd DS18B20 data
 #define ONE_WIRE_PIN2 7 // the 3rd DS18B20 data
 
-#define DHT_TYPE        DHT11  // DHT11 or DHT22
+#define DHT_TYPE        DHT22  // DHT11 or DHT22
 #define ONE_WIRE_CNT    3      // count of 1-wire connections
 #define EMPTY_VAL       -100.0 // empty float value of measurement
 #define MODBUS_BUF_LEN  25     // length of Modbus RTU output buffer
