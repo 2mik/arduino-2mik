@@ -7,12 +7,23 @@
  * DHT11/22 - 1 unit,
  * DS18B20  - 3 units,
  * 
- * Communicates using Modbus RTU:
- * Holding Registers (4x) 40001 - 40010
+ * Supports Modbus RTU.
+ * Holding Registers (4X), function 03H.
+ * Register address 1 corresponds to the physical address 0.
+ * 
+ * Register  Type   Description
+ * 01-02     Float  Pressure (BMP280)
+ * 03-04     Float  Temperature (BMP280)
+ * 05-06     Float  Humidity (DHT22)
+ * 06-08     Float  Temperature (DHT22)
+ * 07-10     Float  Temerature 0 (DS18B20)
+ * 08-12     Float  Temerature 1 (DS18B20)
+ * 11-14     Float  Temerature 2 (DS18B20)
  * 
  * (c) 2017-2019, Mikhail Shiryaev
  */
 
+#include <Adafruit_BMP280.h>   // https://github.com/adafruit/Adafruit_BMP280_Library
 #include <DHT.h>               // https://github.com/adafruit/DHT-sensor-library
 #include <OneWire.h>           // http://www.pjrc.com/teensy/td_libs_OneWire.html
 #include <DallasTemperature.h> // https://github.com/milesburton/Arduino-Temperature-Control-Library
@@ -23,10 +34,11 @@
 #define ONE_WIRE_PIN1 6 // the 2nd DS18B20 data
 #define ONE_WIRE_PIN2 7 // the 3rd DS18B20 data
 
+#define BMP_ADDR        0x76   // BMP280 I2C address
 #define DHT_TYPE        DHT22  // DHT11 or DHT22
 #define ONE_WIRE_CNT    3      // count of 1-wire connections
 #define EMPTY_VAL       -100.0 // empty float value of measurement
-#define MODBUS_BUF_LEN  25     // length of Modbus RTU output buffer
+#define MODBUS_BUF_LEN  33     // length of Modbus RTU output buffer
 
 //#define DEBUG                // write detailed log to Serial port and disable Modbus
 
@@ -41,6 +53,12 @@
  #define DEBUG_PRINTLN(val) 
  #define DEBUG_WRITETIME()
 #endif
+
+// BMP280 by I2C
+Adafruit_BMP280 bmp;
+bool bmpFound = false;
+float bmpP = EMPTY_VAL;
+float bmpT = EMPTY_VAL;
 
 // DHT instance
 DHT dht(DHT_PIN, DHT_TYPE);
@@ -104,9 +122,14 @@ const byte crcLoTable[] = {
 byte modbusBuf[MODBUS_BUF_LEN] = { 
   0x00,       // Slave address
   0x03,       // Function code
-  0x14,       // Byte count (20)
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // register values
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // register values
+  0x1C,       // Byte count (28)
+  0x00, 0x00, 0x00, 0x00, // Register values
+  0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 
   0x00, 0x00  // CRC
 };
 
@@ -114,6 +137,21 @@ byte modbusBuf[MODBUS_BUF_LEN] = {
 #ifdef DEBUG
 unsigned long time;
 #endif
+
+// Initialize BMP280 sensor
+void initBMP() {
+  if (bmp.begin(BMP_ADDR)) {
+    DEBUG_PRINTLN("BMP280 sensor initialized");
+    bmpFound = true;
+    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+  } else {
+    DEBUG_PRINTLN("BMP280 sensor not found");
+  }  
+}
 
 // Initialize DHT sensor
 void initDHT() {
@@ -139,6 +177,26 @@ void writeTime() {
   Serial.println(millis() - time);
 }
 #endif
+
+// Read data from BMP280 sensor
+void readBMP() {
+  DEBUG_WRITETIME();
+  DEBUG_PRINTLN("Reading from BMP280 sensor");
+
+  if (bmpFound) {
+    bmpP = bmp.readPressure();    // Pa
+    bmpT = bmp.readTemperature(); // *C
+  }
+  
+  DEBUG_WRITETIME();
+  DEBUG_PRINT("t = ");
+  DEBUG_PRINTLN(bmpT);
+  DEBUG_PRINT("p = ");
+  DEBUG_PRINTLN(bmpP);
+  
+  DEBUG_WRITETIME();
+  DEBUG_PRINTLN();
+}
 
 // Read data from DHT sensor
 void readDHT() {
@@ -186,23 +244,25 @@ void readDS(int index) {
 // Process serial communication using Modbus protocol
 void communicate() {
 #ifndef DEBUG
-  // wait for the request 00 03 00 00 00 0A C4 1C
+  // wait for the request 00 03 00 00 00 0E C5 DF
   boolean sendResponse = false;
   while (Serial.available() > 0) {
     byte inByte = (byte)Serial.read();
     
-    if (inByte == 0x1C) {
+    if (inByte == 0xDF) {
       sendResponse = true;
     }
   }
   
   // send response
   if (sendResponse) {
-    memcpy(modbusBuf + 3, (byte*)&dhtH, 4);
-    memcpy(modbusBuf + 7, (byte*)&dhtT, 4);
-    memcpy(modbusBuf + 11, (byte*)&dsT, 12);
+    memcpy(modbusBuf + 3, (byte*)&bmpP, 4);
+    memcpy(modbusBuf + 7, (byte*)&bmpT, 4);
+    memcpy(modbusBuf + 11, (byte*)&dhtH, 4);
+    memcpy(modbusBuf + 15, (byte*)&dhtT, 4);
+    memcpy(modbusBuf + 19, (byte*)&dsT, 12);
     unsigned short crc = CRC16(modbusBuf, MODBUS_BUF_LEN - 2);
-    memcpy(modbusBuf + 23, (byte*)&crc, 2);
+    memcpy(modbusBuf + 31, (byte*)&crc, 2);
     Serial.write(modbusBuf, MODBUS_BUF_LEN);
   }
 #endif
@@ -227,6 +287,7 @@ void setup() {
   Serial.begin(9600);
   DEBUG_PRINTLN();
   DEBUG_PRINTLN("SERIAL TH meter started");
+  initBMP();
   initDHT();
   initDS();
   DEBUG_PRINTLN();
@@ -238,12 +299,14 @@ void loop() {
   delay(500);
 #endif
 
-  readDHT(); // around 270 ms
+  readBMP(); // around 3 ms
   communicate();
-  readDS(0); // around 800 ms
+  readDHT(); // around 50 ms
   communicate();
-  readDS(1); // around 800 ms
+  readDS(0); // around 700 ms
   communicate();
-  readDS(2); // around 800 ms
+  readDS(1); // around 700 ms
+  communicate();
+  readDS(2); // around 700 ms
   communicate();
 }
