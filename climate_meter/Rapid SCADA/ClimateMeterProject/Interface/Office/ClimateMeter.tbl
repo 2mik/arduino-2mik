@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TableView title="Climate Meter">
+  <Param>Climate Meter</Param>
+  <Param cnlNum="101">Pressure (BMP280)</Param>
+  <Param cnlNum="102">Temperature (BMP280)</Param>
+  <Param cnlNum="103">Humidity (DHT22)</Param>
+  <Param cnlNum="104">Temperature (DHT22)</Param>
+  <Param cnlNum="105">Temerature 0 (DS18B20)</Param>
+  <Param cnlNum="106">Temerature 1 (DS18B20)</Param>
+  <Param cnlNum="107">Temerature 2 (DS18B20)</Param>
+</TableView>

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfKP xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <KP>
+    <KPNum>1</KPNum>
+    <Name>Climate Meter</Name>
+    <KPTypeID>214</KPTypeID>
+    <Address>0</Address>
+    <CallNum />
+    <CommLineNum>1</CommLineNum>
+    <Descr />
+  </KP>
+</ArrayOfKP>

@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfInCnl xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <InCnl>
+    <CnlNum>101</CnlNum>
+    <Active>true</Active>
+    <Name>Climate Meter - Pressure (BMP280)</Name>
+    <CnlTypeID>2</CnlTypeID>
+    <ObjNum>1</ObjNum>
+    <KPNum>1</KPNum>
+    <Signal>1</Signal>
+    <FormulaUsed>false</FormulaUsed>
+    <Formula />
+    <Averaging>false</Averaging>
+    <ParamID>26</ParamID>
+    <FormatID>0</FormatID>
+    <UnitID>27</UnitID>
+    <CtrlCnlNum xsi:nil="true" />
+    <EvEnabled>false</EvEnabled>
+    <EvSound>false</EvSound>
+    <EvOnChange>false</EvOnChange>
+    <EvOnUndef>false</EvOnUndef>
+    <LimLowCrash xsi:nil="true" />
+    <LimLow xsi:nil="true" />
+    <LimHigh xsi:nil="true" />
+    <LimHighCrash xsi:nil="true" />
+  </InCnl>
+  <InCnl>
+    <CnlNum>102</CnlNum>
+    <Active>true</Active>
+    <Name>Climate Meter - Temperature (BMP280)</Name>
+    <CnlTypeID>2</CnlTypeID>
+    <ObjNum>1</ObjNum>
+    <KPNum>1</KPNum>
+    <Signal>2</Signal>
+    <FormulaUsed>false</FormulaUsed>
+    <Formula />
+    <Averaging>false</Averaging>
+    <ParamID>23</ParamID>
+    <FormatID>1</FormatID>
+    <UnitID>24</UnitID>
+    <CtrlCnlNum xsi:nil="true" />
+    <EvEnabled>false</EvEnabled>
+    <EvSound>false</EvSound>
+    <EvOnChange>false</EvOnChange>
+    <EvOnUndef>false</EvOnUndef>
+    <LimLowCrash xsi:nil="true" />
+    <LimLow xsi:nil="true" />
+    <LimHigh xsi:nil="true" />
+    <LimHighCrash xsi:nil="true" />
+  </InCnl>
+  <InCnl>
+    <CnlNum>103</CnlNum>
+    <Active>true</Active>
+    <Name>Climate Meter - Humidity (DHT22)</Name>
+    <CnlTypeID>2</CnlTypeID>
+    <ObjNum>1</ObjNum>
+    <KPNum>1</KPNum>
+    <Signal>3</Signal>
+    <FormulaUsed>false</FormulaUsed>
+    <Formula />
+    <Averaging>false</Averaging>
+    <ParamID>27</ParamID>
+    <FormatID>1</FormatID>
+    <UnitID>17</UnitID>
+    <CtrlCnlNum xsi:nil="true" />
+    <EvEnabled>false</EvEnabled>
+    <EvSound>false</EvSound>
+    <EvOnChange>false</EvOnChange>
+    <EvOnUndef>false</EvOnUndef>
+    <LimLowCrash xsi:nil="true" />
+    <LimLow xsi:nil="true" />
+    <LimHigh xsi:nil="true" />
+    <LimHighCrash xsi:nil="true" />
+  </InCnl>
+  <InCnl>
+    <CnlNum>104</CnlNum>
+    <Active>true</Active>
+    <Name>Climate Meter - Temperature (DHT22)</Name>
+    <CnlTypeID>2</CnlTypeID>
+    <ObjNum>1</ObjNum>
+    <KPNum>1</KPNum>
+    <Signal>4</Signal>
+    <FormulaUsed>false</FormulaUsed>
+    <Formula />
+    <Averaging>false</Averaging>
+    <ParamID>23</ParamID>
+    <FormatID>1</FormatID>
+    <UnitID>24</UnitID>
+    <CtrlCnlNum xsi:nil="true" />
+    <EvEnabled>false</EvEnabled>
+    <EvSound>false</EvSound>
+    <EvOnChange>false</EvOnChange>
+    <EvOnUndef>false</EvOnUndef>
+    <LimLowCrash xsi:nil="true" />
+    <LimLow xsi:nil="true" />
+    <LimHigh xsi:nil="true" />
+    <LimHighCrash xsi:nil="true" />
+  </InCnl>
+  <InCnl>
+    <CnlNum>105</CnlNum>
+    <Active>true</Active>
+    <Name>Climate Meter - Temerature 0 (DS18B20)</Name>
+    <CnlTypeID>2</CnlTypeID>
+    <ObjNum>1</ObjNum>
+    <KPNum>1</KPNum>
+    <Signal>5</Signal>
+    <FormulaUsed>false</FormulaUsed>
+    <Formula />
+    <Averaging>false</Averaging>
+    <ParamID>23</ParamID>
+    <FormatID>1</FormatID>
+    <UnitID>24</UnitID>
+    <CtrlCnlNum xsi:nil="true" />
+    <EvEnabled>false</EvEnabled>
+    <EvSound>false</EvSound>
+    <EvOnChange>false</EvOnChange>
+    <EvOnUndef>false</EvOnUndef>
+    <LimLowCrash xsi:nil="true" />
+    <LimLow xsi:nil="true" />
+    <LimHigh xsi:nil="true" />
+    <LimHighCrash xsi:nil="true" />
+  </InCnl>
+  <InCnl>
+    <CnlNum>106</CnlNum>
+    <Active>true</Active>
+    <Name>Climate Meter - Temerature 1 (DS18B20)</Name>
+    <CnlTypeID>2</CnlTypeID>
+    <ObjNum>1</ObjNum>
+    <KPNum>1</KPNum>
+    <Signal>6</Signal>
+    <FormulaUsed>false</FormulaUsed>
+    <Formula />
+    <Averaging>false</Averaging>
+    <ParamID>23</ParamID>
+    <FormatID>1</FormatID>
+    <UnitID>24</UnitID>
+    <CtrlCnlNum xsi:nil="true" />
+    <EvEnabled>false</EvEnabled>
+    <EvSound>false</EvSound>
+    <EvOnChange>false</EvOnChange>
+    <EvOnUndef>false</EvOnUndef>
+    <LimLowCrash xsi:nil="true" />
+    <LimLow xsi:nil="true" />
+    <LimHigh xsi:nil="true" />
+    <LimHighCrash xsi:nil="true" />
+  </InCnl>
+  <InCnl>
+    <CnlNum>107</CnlNum>
+    <Active>true</Active>
+    <Name>Climate Meter - Temerature 2 (DS18B20)</Name>
+    <CnlTypeID>2</CnlTypeID>
+    <ObjNum>1</ObjNum>
+    <KPNum>1</KPNum>
+    <Signal>7</Signal>
+    <FormulaUsed>false</FormulaUsed>
+    <Formula />
+    <Averaging>false</Averaging>
+    <ParamID>23</ParamID>
+    <FormatID>1</FormatID>
+    <UnitID>24</UnitID>
+    <CtrlCnlNum xsi:nil="true" />
+    <EvEnabled>false</EvEnabled>
+    <EvSound>false</EvSound>
+    <EvOnChange>false</EvOnChange>
+    <EvOnUndef>false</EvOnUndef>
+    <LimLowCrash xsi:nil="true" />
+    <LimLow xsi:nil="true" />
+    <LimHigh xsi:nil="true" />
+    <LimHighCrash xsi:nil="true" />
+  </InCnl>
+</ArrayOfInCnl>
