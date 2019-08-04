@@ -22,7 +22,7 @@
         <Param name="DataBits" value="8" />
         <Param name="DtrEnable" value="False" />
         <Param name="Parity" value="None" />
-        <Param name="PortName" value="COM8" />
+        <Param name="PortName" value="/dev/ttyUSB0" />
         <Param name="RtsEnable" value="False" />
         <Param name="StopBits" value="One" />
       </CommChannel>
