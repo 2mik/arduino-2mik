@@ -5,7 +5,7 @@
  * Arduino Nano,
  * BMP280   - 1 unit,
  * DHT11/22 - 1 unit,
- * DS18B20  - 3 units,
+ * DS18B20  - 3 units.
  * 
  * Supports Modbus RTU.
  * Holding Registers (4X), function 03H.
