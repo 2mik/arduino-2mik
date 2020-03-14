@@ -3,10 +3,14 @@
   <Interface>
     <ItfID>1</ItfID>
     <Name>Office\</Name>
+    <Hidden>false</Hidden>
+    <ObjNum xsi:nil="true" />
   </Interface>
   <Interface>
     <ItfID>2</ItfID>
     <Name>Office\ClimateMeter.tbl</Name>
     <Descr>Climate Meter</Descr>
+    <Hidden>false</Hidden>
+    <ObjNum xsi:nil="true" />
   </Interface>
 </ArrayOfInterface>
